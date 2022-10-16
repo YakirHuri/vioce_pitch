@@ -83,7 +83,7 @@ class Recorder:
                 sound = parselmouth.Sound("voice.wav")
                 bla = self.interactive_change_pitch(sound)
 
-                with open('change_pitchvoice.wav', 'wb') as f:
+                with open('change_pitch_voice.wav', 'wb') as f:
                     f.write(bla.data)
 
                 data, fs = sf.read("change_pitch_voice.wav", dtype='float32')
@@ -142,7 +142,7 @@ def main():
         row=2, column=0, pady=4, padx=4)
     x1_label_s = Scale(voice_rec, from_=0, to=100,
                          orient=HORIZONTAL, length=300, command=recorder.setX1)
-    x1_label_s.set(0.01)
+    x1_label_s.set(10)
     x1_label_s.grid(row=2, column=1, pady=4, padx=4)
     ##### x2 ##########################
     x2_label = Label(voice_rec, text="x2").grid(
