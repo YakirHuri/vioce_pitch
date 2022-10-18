@@ -16,6 +16,11 @@ import threading
 from tkinter import messagebox
 
 
+from pydub import AudioSegment
+from pydub.playback import play
+
+
+
 # x1 = 0.01
 # x2 =100
 # x3 =900
@@ -27,6 +32,7 @@ class Recorder:
         self.x2 = 75
         self.x3 = 600
         self.factor = 3
+        self.octaves = 0.0
         self.q = queue.Queue()
 
     def setX1(self, x1):
@@ -41,6 +47,28 @@ class Recorder:
 
     def setfactor(self, factor):
         self.factor = int(factor)
+
+    def setOctave(self, octaves):
+        self.octaves = float(octaves) / 10.0   
+
+    def change_octave(self, voice_file):
+        sound = AudioSegment.from_file(voice_file, format="wav")
+
+        # shift the pitch up by half an octave (speed will increase proportionally)
+        print('self.octave ' +str(self.octaves))
+        new_sample_rate = int(sound.frame_rate * (2.0 ** self.octaves))
+
+        # keep the same samples but tell the computer they ought to be played at the 
+        # new, higher sample rate. This file sounds like a chipmunk but has a weird sample rate.
+        hipitch_sound = sound._spawn(sound.raw_data, overrides={'frame_rate': new_sample_rate})
+
+        # now we just convert it to a common sample rate (44.1k - standard audio CD) to 
+        # make sure it works in regular audio players. Other than potentially losing audio quality (if
+        # you set it too low - 44.1k is plenty) this should now noticeable change how the audio sounds.
+        hipitch_sound = hipitch_sound.set_frame_rate(44100)
+
+        #Play pitch changed sound
+        play(hipitch_sound)    
 
     def change_pitch(self, sound, factor):
         print('change_pitch ' + str(self.x1) + ', ' + str(self.x2) + ', ' + str(self.x3) + ', ' + str(self.factor))
@@ -80,15 +108,15 @@ class Recorder:
                 # Read the recording if it exists and play it
 
                 print('play the recording')
-                sound = parselmouth.Sound("voice.wav")
-                bla = self.interactive_change_pitch(sound)
+                self.change_octave('voice.wav')
 
-                with open('change_pitch_voice.wav', 'wb') as f:
-                    f.write(bla.data)
-
-                data, fs = sf.read("change_pitch_voice.wav", dtype='float32')
-                sd.play(data, fs)
-                sd.wait()
+                # sound = parselmouth.Sound("voice.wav")
+                # bla = self.interactive_change_pitch(sound)
+                # with open('change_pitch_voice.wav', 'wb') as f:
+                #     f.write(bla.data)
+                # data, fs = sf.read("change_pitch_voice.wav", dtype='float32')
+                # sd.play(data, fs)
+                # sd.wait()
 
             else:
                 # Display and error if none is found
@@ -119,9 +147,7 @@ class Recorder:
                     file.write(self.q.get())
 
 
-    # def show_values(value=None):
-    #     print(value)
-
+  
 def main():
 
     recorder = Recorder()
@@ -161,10 +187,18 @@ def main():
     ##### FACTOR ##########################
     factor_label = Label(voice_rec, text="factor").grid(
         row=30, column=0, pady=4, padx=4)
-    factor_label_s = Scale(voice_rec, from_=1, to=5,
+    factor_label_s = Scale(voice_rec, from_=-10, to=10,
                          orient=HORIZONTAL, length=300, command=recorder.setfactor)
     factor_label_s.set(3)
     factor_label_s.grid(row=30, column=1, pady=4, padx=4)
+
+     ##### OCTAVE ##########################
+    octave_label = Label(voice_rec, text="octave").grid(
+        row=40, column=0, pady=4, padx=4)
+    octave_label_s = Scale(voice_rec, from_=-2, to=10,
+                         orient=HORIZONTAL, length=300, command=recorder.setOctave)
+    octave_label_s.set(0)
+    octave_label_s.grid(row=40, column=1, pady=4, padx=4)
 
     # Button to record audio
     record_btn = Button(voice_rec, text="RECORD",
@@ -185,3 +219,26 @@ def main():
 if __name__ == '__main__':
     main()
 
+
+
+# sound = AudioSegment.from_file('voice.wav', format="wav")
+
+# # shift the pitch up by half an octave (speed will increase proportionally)
+# octaves = 0.5
+
+# new_sample_rate = int(sound.frame_rate * (2.0 ** octaves))
+
+# # keep the same samples but tell the computer they ought to be played at the 
+# # new, higher sample rate. This file sounds like a chipmunk but has a weird sample rate.
+# hipitch_sound = sound._spawn(sound.raw_data, overrides={'frame_rate': new_sample_rate})
+
+# # now we just convert it to a common sample rate (44.1k - standard audio CD) to 
+# # make sure it works in regular audio players. Other than potentially losing audio quality (if
+# # you set it too low - 44.1k is plenty) this should now noticeable change how the audio sounds.
+# hipitch_sound = hipitch_sound.set_frame_rate(44100)
+
+# #Play pitch changed sound
+# play(hipitch_sound)
+
+#export / save pitch changed sound
+# hipitch_sound.export("out.wav", format="wav")
