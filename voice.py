@@ -15,42 +15,25 @@ import soundfile as sf
 import threading
 from tkinter import messagebox
 
+from PIL import Image, ImageTk
+
 
 from pydub import AudioSegment
+from pydub.effects import speedup
+
 from pydub.playback import play
-
-
-
-# x1 = 0.01
-# x2 =100
-# x3 =900
 
 class Recorder:
     def __init__(self):
 
-        self.x1 = 0.01
-        self.x2 = 75
-        self.x3 = 600
-        self.factor = 3
+     
         self.octaves = 0.0
-        self.q = queue.Queue()
-
-    def setX1(self, x1):
-        self.x1 = float(x1) / float(100)
-
-
-    def setX2(self, x2):
-        self.x2 = int(x2)
-
-    def setX3(self, x3):
-        self.x3 = int(x3)
-
-    def setfactor(self, factor):
-        self.factor = int(factor)
+        self.q = queue.Queue()    
 
     def setOctave(self, octaves):
         self.octaves = float(octaves) / 10.0   
 
+   
     def change_octave(self, voice_file):
         sound = AudioSegment.from_file(voice_file, format="wav")
 
@@ -66,28 +49,19 @@ class Recorder:
         # make sure it works in regular audio players. Other than potentially losing audio quality (if
         # you set it too low - 44.1k is plenty) this should now noticeable change how the audio sounds.
         hipitch_sound = hipitch_sound.set_frame_rate(44100)
-
         #Play pitch changed sound
         play(hipitch_sound)    
+       
+        # if (self.octaves == 0):
 
-    def change_pitch(self, sound, factor):
-        print('change_pitch ' + str(self.x1) + ', ' + str(self.x2) + ', ' + str(self.x3) + ', ' + str(self.factor))
-        manipulation = call(sound, "To Manipulation",
-                            self.x1, self.x2, self.x3)
+        #     play(self.speed_change(hipitch_sound, 1))
+        # else:
+        #     speed = 0.5#self.octaves    
+        #     print(str(speed))
+        #     play(self.speed_change(hipitch_sound, speed))
+    
 
-        pitch_tier = call(manipulation, "Extract pitch tier")
-
-        call(pitch_tier, "Multiply frequencies",
-                sound.xmin, sound.xmax, self.factor)
-
-        call([pitch_tier, manipulation], "Replace pitch tier")
-        return call(manipulation, "Get resynthesis (overlap-add)")
-
-    def interactive_change_pitch(self, audio_file):
-        sound = parselmouth.Sound(audio_file)
-        sound_changed_pitch = self.change_pitch(sound, self.factor)
-        return Audio(data=sound_changed_pitch.values, rate=sound_changed_pitch.sampling_frequency)
-
+  
     # Functions to play, stop and record audio in Python voice recorder
     # The recording is done as a thread to prevent it being the main process
 
@@ -109,14 +83,6 @@ class Recorder:
 
                 print('play the recording')
                 self.change_octave('voice.wav')
-
-                # sound = parselmouth.Sound("voice.wav")
-                # bla = self.interactive_change_pitch(sound)
-                # with open('change_pitch_voice.wav', 'wb') as f:
-                #     f.write(bla.data)
-                # data, fs = sf.read("change_pitch_voice.wav", dtype='float32')
-                # sd.play(data, fs)
-                # sd.wait()
 
             else:
                 # Display and error if none is found
@@ -153,61 +119,38 @@ def main():
     recorder = Recorder()
     # Define the user interface for Voice Recorder using Python
     voice_rec = Tk()
-    voice_rec.geometry("600x300")
+    voice_rec.geometry("500x200")
     voice_rec.title("תוכנת עיוות קול")
-    voice_rec.config(bg="#cccccc")
+    voice_rec.config(bg="white")
     voice_rec.resizable(False, False)
     # Create a queue to contain the audio data
     q = queue.Queue()
     # Declare variables and initialise them
     recording = False
-    file_exists = False
+    file_exists = False  
 
-    ##### x1 ##########################
-    x1_label = Label(voice_rec, text="x1").grid(
-        row=2, column=0, pady=4, padx=4)
-    x1_label_s = Scale(voice_rec, from_=0, to=100,
-                         orient=HORIZONTAL, length=300, command=recorder.setX1)
-    x1_label_s.set(10)
-    x1_label_s.grid(row=2, column=1, pady=4, padx=4)
-    ##### x2 ##########################
-    x2_label = Label(voice_rec, text="x2").grid(
-        row=10, column=0, pady=4, padx=4)
-    x2_label_s = Scale(voice_rec, from_=0, to=100,
-                         orient=HORIZONTAL, length=300, command=recorder.setX2)
-    x2_label_s.set(75)
-    x2_label_s.grid(row=10, column=1, pady=4, padx=4)
-    ##### x3 ##########################
-    x3_label = Label(voice_rec, text="x3").grid(
-        row=20, column=0, pady=4, padx=4)
-    x3_label_s = Scale(voice_rec, from_=100, to=1000,
-                         orient=HORIZONTAL, length=300, command=recorder.setX3)
-    x3_label_s.set(600)
-    x3_label_s.grid(row=20, column=1, pady=4, padx=4)
-    ##### FACTOR ##########################
-    factor_label = Label(voice_rec, text="factor").grid(
-        row=30, column=0, pady=4, padx=4)
-    factor_label_s = Scale(voice_rec, from_=-10, to=10,
-                         orient=HORIZONTAL, length=300, command=recorder.setfactor)
-    factor_label_s.set(3)
-    factor_label_s.grid(row=30, column=1, pady=4, padx=4)
-
-     ##### OCTAVE ##########################
-    octave_label = Label(voice_rec, text="octave").grid(
+    ##### OCTAVE ##########################
+    octave_label = Label(voice_rec, text="octave", bg="white").grid(
         row=40, column=0, pady=4, padx=4)
-    octave_label_s = Scale(voice_rec, from_=-2, to=10,
-                         orient=HORIZONTAL, length=300, command=recorder.setOctave)
+    octave_label_s = Scale(voice_rec, from_=-5, to=15,
+                         orient=HORIZONTAL, length=300, bg="white", command=recorder.setOctave)
     octave_label_s.set(0)
     octave_label_s.grid(row=40, column=1, pady=4, padx=4)
 
     # Button to record audio
-    record_btn = Button(voice_rec, text="RECORD",
+    im_re = Image.open('record.jpg')
+    ph_re= ImageTk.PhotoImage(im_re)
+    record_btn = Button(voice_rec, text="RECORD", image=ph_re, 
                         command=lambda m=1: recorder.threading_rec(m))
     # Stop button
-    stop_btn = Button(voice_rec, text="STOP RECORDING",
+    im_st = Image.open('stop.jpg')
+    ph_st= ImageTk.PhotoImage(im_st)
+    stop_btn = Button(voice_rec, text="STOP RECORDING", image=ph_st, 
                       command=lambda m=2: recorder.threading_rec(m))
     # Play button
-    play_btn = Button(voice_rec, text="PLAY RECORDING",
+    im_pl = Image.open('play.jpg')
+    ph_pl= ImageTk.PhotoImage(im_pl)    
+    play_btn = Button(voice_rec, text="PLAY RECORDING", image=ph_pl, 
                       command=lambda m=3: recorder.threading_rec(m))
     # Position buttons
     record_btn.grid(row=1, column=1)
@@ -219,26 +162,3 @@ def main():
 if __name__ == '__main__':
     main()
 
-
-
-# sound = AudioSegment.from_file('voice.wav', format="wav")
-
-# # shift the pitch up by half an octave (speed will increase proportionally)
-# octaves = 0.5
-
-# new_sample_rate = int(sound.frame_rate * (2.0 ** octaves))
-
-# # keep the same samples but tell the computer they ought to be played at the 
-# # new, higher sample rate. This file sounds like a chipmunk but has a weird sample rate.
-# hipitch_sound = sound._spawn(sound.raw_data, overrides={'frame_rate': new_sample_rate})
-
-# # now we just convert it to a common sample rate (44.1k - standard audio CD) to 
-# # make sure it works in regular audio players. Other than potentially losing audio quality (if
-# # you set it too low - 44.1k is plenty) this should now noticeable change how the audio sounds.
-# hipitch_sound = hipitch_sound.set_frame_rate(44100)
-
-# #Play pitch changed sound
-# play(hipitch_sound)
-
-#export / save pitch changed sound
-# hipitch_sound.export("out.wav", format="wav")
