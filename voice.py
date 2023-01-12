@@ -23,6 +23,8 @@ import pyrubberband as pyrb
 
 import matplotlib.pyplot as plt
 
+import time
+
 from pydub import AudioSegment
 from pydub.effects import speedup
 
@@ -40,7 +42,7 @@ class Recorder:
 
         self.voice_rec.protocol("WM_DELETE_WINDOW", self.close)
 
-        self.voice_rec.geometry("500x200")
+        self.voice_rec.geometry("1000x500")
         self.voice_rec.title("  YONI - תוכנת עיוות קול")
         self.voice_rec.config(bg="white")
         self.voice_rec.resizable(False, False)
@@ -73,10 +75,20 @@ class Recorder:
         ph_pl= ImageTk.PhotoImage(im_pl)    
         play_btn = Button(self.voice_rec, text="PLAY RECORDING", image=ph_pl, 
                         command=lambda m=3: self.threading_rec(m))
+        
+        self.rec_img = ImageTk.PhotoImage(Image.open("record_b.png"))
+        self.idle_img = ImageTk.PhotoImage(Image.open("idle_b.png"))
+        
+
+       
         # Position buttons
         record_btn.grid(row=1, column=1)
         stop_btn.grid(row=1, column=0)
         play_btn.grid(row=1, column=2)
+
+        self.label_img = Label(self.voice_rec, image = self.idle_img)
+        self.label_img.grid(row=50, column=1)
+
         self.voice_rec.mainloop()
 
     def close(self):
@@ -89,7 +101,8 @@ class Recorder:
         self.octaves = float(octaves) / 10.0   
 
    
-    def change_octave(self, voice_file):
+    def change_octave_and_play(self):
+        voice_file = 'voice.wav'
         sound = AudioSegment.from_file(voice_file, format="wav")
 
         # shift the pitch up by half an octave (speed will increase proportionally)
@@ -114,17 +127,24 @@ class Recorder:
 
     def threading_rec(self, command_index):
         if command_index == 1:
+
+            self.label_img.configure(image = self.rec_img)
+            
+
             # If recording is selected, then the thread is activated
             t1 = threading.Thread(target=self.record_audio)
             t1.start()
         elif command_index == 2:
             # To stop, set the flag to false
             print('stop the recording')
+
+            self.label_img.configure(image = self.idle_img)
+
             global recording
             recording = False
             messagebox.showinfo(message="Recording finished")
         elif command_index == 3:
-            # To play a recording, it must exist.
+           
             if file_exists:
                 # Read the recording if it exists and play it
 
@@ -132,9 +152,11 @@ class Recorder:
 
                 sample_rate, audio_time_series = wavfile.read('voice.wav')
 
-                self.fft_plot(audio_time_series, sample_rate)
+                self.fft_plot(audio_time_series, sample_rate)                 
+                self.label_img.configure(image = self.plt_img)
 
-                self.change_octave('voice.wav')
+                t2 = threading.Thread(target=self.change_octave_and_play)
+                t2.start()
 
             else:
                 # Display and error if none is found
@@ -171,11 +193,12 @@ class Recorder:
         x_freq = np.linspace(0, sample_rate//2, N//2)
         # Changed from abs(y_freq[:domain]) -> y_freq[:domain]
         plt.plot(x_freq, y_freq[:domain])
-        plt.xlabel("Frequency [Hz]")
-        plt.ylabel("Frequency Amplitude |X(t)|")
+        #plt.xlabel("Frequency [Hz]")
+        #plt.ylabel("Frequency Amplitude |X(t)|")
 
         plt.savefig('plt.png')
-
+        time.sleep(1)
+        self.plt_img = ImageTk.PhotoImage(Image.open("plt.png"))
 
   
 def main():
