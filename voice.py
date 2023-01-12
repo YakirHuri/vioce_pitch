@@ -30,6 +30,11 @@ from pydub.effects import speedup
 
 from pydub.playback import play
 
+import scipy
+from scipy.io import wavfile
+import librosa, numpy as np
+
+
 class Recorder:
     def __init__(self):
 
@@ -102,7 +107,7 @@ class Recorder:
 
    
     def change_octave_and_play(self):
-        voice_file = 'voice.wav'
+        voice_file = 'original.wav'
         sound = AudioSegment.from_file(voice_file, format="wav")
 
         # shift the pitch up by half an octave (speed will increase proportionally)
@@ -116,9 +121,13 @@ class Recorder:
         # now we just convert it to a common sample rate (44.1k - standard audio CD) to 
         # make sure it works in regular audio players. Other than potentially losing audio quality (if
         # you set it too low - 44.1k is plenty) this should now noticeable change how the audio sounds.
-        hipitch_sound = hipitch_sound.set_frame_rate(44100)
+        hipitch_sound = hipitch_sound.set_frame_rate(int(44100))
         #Play pitch changed sound
         play(hipitch_sound)    
+
+
+        hipitch_sound.export("hipitch_sound.wav", format="wav")
+        
         
 
   
@@ -150,9 +159,9 @@ class Recorder:
 
                 print('play the recording')
 
-                sample_rate, audio_time_series = wavfile.read('voice.wav')
+                sample_rate, original_voice = wavfile.read('original.wav')
 
-                self.fft_plot(audio_time_series, sample_rate)                 
+                self.fft_plot(original_voice, sample_rate)                 
                 self.label_img.configure(image = self.plt_img)
 
                 t2 = threading.Thread(target=self.change_octave_and_play)
@@ -176,7 +185,7 @@ class Recorder:
         global file_exists
         # Create a file to save the audio
         messagebox.showinfo(message="Recording Audio. Speak into the mic")
-        with sf.SoundFile("voice.wav", mode='w', samplerate=44100,
+        with sf.SoundFile("original.wav", mode='w', samplerate=44100,
                             channels=2) as file:
             # Create an input stream to record audio without a preset time
             with sd.InputStream(samplerate=44100, channels=2, callback=self.callback):
@@ -209,5 +218,52 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    #main()
+    # import scipy
+    # from scipy.io import wavfile
+    # import librosa, numpy as np
 
+    # song, fs = librosa.load("hipitch_sound.wav")
+
+    # song_2_times_faster = librosa.effects.time_stretch(song, 0.5)
+
+    # scipy.io.wavfile.write("song_2_times_faster.wav", fs, song_2_times_faster) # save the song
+
+    # voice_file = 'song_2_times_faster.wav'
+    # sound = AudioSegment.from_file(voice_file, format="wav")
+    # sound = sound.set_frame_rate(22050)
+    # sound = sound.set_channels(1)
+
+    # play(sound)    
+
+    import pyaudio  
+    import wave  
+
+    #define stream chunk   
+    chunk = 1024  
+
+    #open a wav format music  
+    f = wave.open(r"hipitch_sound.wav","rb")  
+    #instantiate PyAudio  
+    p = pyaudio.PyAudio()  
+    #open stream  
+    stream = p.open(format = p.get_format_from_width(f.getsampwidth()),  
+                    channels = f.getnchannels(),  
+                    rate = f.getframerate(),  
+                    output = True)  
+    #read data  
+    data = f.readframes(chunk)  
+
+    #play stream  
+    while data:  
+        stream.write(data)  
+        data = f.readframes(chunk)  
+
+    #stop stream  
+    stream.stop_stream()  
+    stream.close()  
+
+    #close PyAudio  
+    p.terminate()  
+
+   
