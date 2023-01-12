@@ -16,7 +16,7 @@ import threading
 from tkinter import messagebox
 
 from PIL import Image, ImageTk
-
+import pyrubberband as pyrb
 
 from pydub import AudioSegment
 from pydub.effects import speedup
@@ -51,15 +51,8 @@ class Recorder:
         hipitch_sound = hipitch_sound.set_frame_rate(44100)
         #Play pitch changed sound
         play(hipitch_sound)    
-       
-        # if (self.octaves == 0):
-
-        #     play(self.speed_change(hipitch_sound, 1))
-        # else:
-        #     speed = 0.5#self.octaves    
-        #     print(str(speed))
-        #     play(self.speed_change(hipitch_sound, speed))
-    
+        
+        y_stretch = pyrb.time_stretch(hipitch_sound, sr, 0.75)
 
   
     # Functions to play, stop and record audio in Python voice recorder
@@ -120,7 +113,7 @@ def main():
     # Define the user interface for Voice Recorder using Python
     voice_rec = Tk()
     voice_rec.geometry("500x200")
-    voice_rec.title("תוכנת עיוות קול")
+    voice_rec.title("  YONI - תוכנת עיוות קול")
     voice_rec.config(bg="white")
     voice_rec.resizable(False, False)
     # Create a queue to contain the audio data
