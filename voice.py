@@ -35,6 +35,8 @@ from scipy.io import wavfile
 import librosa, numpy as np
 
 
+
+
 class Recorder:
     def __init__(self):
 
@@ -123,10 +125,25 @@ class Recorder:
         # you set it too low - 44.1k is plenty) this should now noticeable change how the audio sounds.
         hipitch_sound = hipitch_sound.set_frame_rate(int(44100))
         #Play pitch changed sound
-        play(hipitch_sound)    
+        #play(hipitch_sound)    
 
 
         hipitch_sound.export("hipitch_sound.wav", format="wav")
+      
+        song, fs = librosa.load("hipitch_sound.wav")
+
+        if (self.octaves > 0.5 and self.octaves < 0.7):
+            song_2_times_faster = librosa.effects.time_stretch(song, 0.5)
+        elif (self.octaves > 0.7):
+            song_2_times_faster = librosa.effects.time_stretch(song, 0.3)
+        else:
+            song_2_times_faster = librosa.effects.time_stretch(song, 1.0)  
+              
+        scipy.io.wavfile.write("song_2_times_faster.wav", fs, song_2_times_faster) # save the song
+
+        import subprocess
+        subprocess.run(["play", "song_2_times_faster.wav"])
+
         
         
 
@@ -215,55 +232,47 @@ def main():
 
     recorder = Recorder()
     
+def float2pcm(sig, dtype='int16'):
+    """Convert floating point signal with a range from -1 to 1 to PCM.
+    Any signal values outside the interval [-1.0, 1.0) are clipped.
+    No dithering is used.
+    Note that there are different possibilities for scaling floating
+    point numbers to PCM numbers, this function implements just one of
+    them.  For an overview of alternatives see
+    http://blog.bjornroche.com/2009/12/int-float-int-its-jungle-out-there.html
+    Parameters
+    ----------
+    sig : array_like
+        Input array, must have floating point type.
+    dtype : data type, optional
+        Desired (integer) data type.
+    Returns
+    -------
+    numpy.ndarray
+        Integer data, scaled and clipped to the range of the given
+        *dtype*.
+    See Also
+    --------
+    pcm2float, dtype
+    """
+    sig = np.asarray(sig)
+    if sig.dtype.kind != 'f':
+        raise TypeError("'sig' must be a float array")
+    dtype = np.dtype(dtype)
+    if dtype.kind not in 'iu':
+        raise TypeError("'dtype' must be an integer type")
 
+    i = np.iinfo(dtype)
+    abs_max = 2 ** (i.bits - 1)
+    offset = i.min + abs_max
+    return (sig * abs_max + offset).clip(i.min, i.max).astype(dtype)
 
 if __name__ == '__main__':
-    #main()
-    # import scipy
-    # from scipy.io import wavfile
-    # import librosa, numpy as np
+    main()
+   
 
-    # song, fs = librosa.load("hipitch_sound.wav")
+   
 
-    # song_2_times_faster = librosa.effects.time_stretch(song, 0.5)
-
-    # scipy.io.wavfile.write("song_2_times_faster.wav", fs, song_2_times_faster) # save the song
-
-    # voice_file = 'song_2_times_faster.wav'
-    # sound = AudioSegment.from_file(voice_file, format="wav")
-    # sound = sound.set_frame_rate(22050)
-    # sound = sound.set_channels(1)
-
-    # play(sound)    
-
-    import pyaudio  
-    import wave  
-
-    #define stream chunk   
-    chunk = 1024  
-
-    #open a wav format music  
-    f = wave.open(r"hipitch_sound.wav","rb")  
-    #instantiate PyAudio  
-    p = pyaudio.PyAudio()  
-    #open stream  
-    stream = p.open(format = p.get_format_from_width(f.getsampwidth()),  
-                    channels = f.getnchannels(),  
-                    rate = f.getframerate(),  
-                    output = True)  
-    #read data  
-    data = f.readframes(chunk)  
-
-    #play stream  
-    while data:  
-        stream.write(data)  
-        data = f.readframes(chunk)  
-
-    #stop stream  
-    stream.stop_stream()  
-    stream.close()  
-
-    #close PyAudio  
-    p.terminate()  
+   
 
    
