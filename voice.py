@@ -1,7 +1,7 @@
 
 
-import parselmouth
-from parselmouth.praat import call
+#import parselmouth
+#from parselmouth.praat import call
 from IPython.display import Audio
 import pygame
 import ipywidgets
@@ -14,12 +14,10 @@ import queue
 import soundfile as sf
 import threading
 from tkinter import messagebox
-from scipy.io import wavfile
-from scipy.fftpack import fft
 
-import numpy as np
+#import numpy as np
 from PIL import Image, ImageTk
-import pyrubberband as pyrb
+#import pyrubberband as pyrb
 
 import matplotlib.pyplot as plt
 
@@ -31,11 +29,13 @@ from pydub.effects import speedup
 from pydub.playback import play
 
 import scipy
+from scipy.fftpack import fft
 from scipy.io import wavfile
-import librosa, numpy as np
 
+import numpy as np #pip3 install numpy==1.19.5
+import subprocess
 
-
+import librosa_logic
 
 class Recorder:
     def __init__(self):
@@ -125,24 +125,17 @@ class Recorder:
         # you set it too low - 44.1k is plenty) this should now noticeable change how the audio sounds.
         hipitch_sound = hipitch_sound.set_frame_rate(int(44100))
         #Play pitch changed sound
-        #play(hipitch_sound)    
 
-
+        
         hipitch_sound.export("hipitch_sound.wav", format="wav")
-      
-        song, fs = librosa.load("hipitch_sound.wav")
+        original, fs = librosa_logic.yakr_load("hipitch_sound.wav")
+        
+        
+        slow_recording = librosa_logic.yakir_time_stretch(original, 0.5)  
+        scipy.io.wavfile.write("yakir_tmp_333.wav", fs, slow_recording) 
+        subprocess.run(["aplay", "yakir_tmp_333.wav"])
 
-        if (self.octaves > 0.5 ):
-            song_2_times_faster = librosa.effects.time_stretch(song, 0.5)
-        # elif (self.octaves > 0.7):
-        #     song_2_times_faster = librosa.effects.time_stretch(song, 0.3)
-        else:
-            song_2_times_faster = librosa.effects.time_stretch(song, 1.0)  
-              
-        scipy.io.wavfile.write("song_2_times_faster.wav", fs, song_2_times_faster) # save the song
 
-        import subprocess
-        subprocess.run(["play", "song_2_times_faster.wav"])
 
         
         
@@ -232,6 +225,47 @@ def main():
 
     recorder = Recorder()
     
+def float2pcm(sig, dtype='int16'):
+    """Convert floating point signal with a range from -1 to 1 to PCM.
+    Any signal values outside the interval [-1.0, 1.0) are clipped.
+    No dithering is used.
+    Note that there are different possibilities for scaling floating
+    point numbers to PCM numbers, this function implements just one of
+    them.  For an overview of alternatives see
+    http://blog.bjornroche.com/2009/12/int-float-int-its-jungle-out-there.html
+    Parameters
+    ----------
+    sig : array_like
+        Input array, must have floating point type.
+    dtype : data type, optional
+        Desired (integer) data type.
+    Returns
+    -------
+    numpy.ndarray
+        Integer data, scaled and clipped to the range of the given
+        *dtype*.
+    See Also
+    --------
+    pcm2float, dtype
+    """
+    sig = np.asarray(sig)
+    if sig.dtype.kind != 'f':
+        raise TypeError("'sig' must be a float array")
+    dtype = np.dtype(dtype)
+    if dtype.kind not in 'iu':
+        raise TypeError("'dtype' must be an integer type")
+
+    i = np.iinfo(dtype)
+    abs_max = 2 ** (i.bits - 1)
+    offset = i.min + abs_max
+    return (sig * abs_max + offset).clip(i.min, i.max).astype(dtype)
+
 if __name__ == '__main__':
     main()
+   
+
+   
+
+   
+
    

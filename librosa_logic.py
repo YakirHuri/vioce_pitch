@@ -13,6 +13,11 @@ from typing import TypeVar
 import soxr
 import soundfile as sf
 import scipy
+import scipy.signal
+import scipy.io
+import scipy.io.wavfile
+
+
 from numpy.lib.stride_tricks import as_strided
 # import librosa
 
@@ -800,5 +805,5 @@ if __name__ == '__main__':
 #   song_2_times_faster = librosa.effects.time_stretch(song, 0.5)  
 
   song_2_times_faster = yakir_time_stretch(song, 0.5)  
-  scipy.io.wavfile.write("yakir_tmp_111.wav", fs, song_2_times_faster) # save the song
+  scipy.io.wavfile.write("yakir_tmp_222.wav", fs, song_2_times_faster) # save the song
 
