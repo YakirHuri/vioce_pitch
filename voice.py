@@ -2,11 +2,14 @@
 
 #import parselmouth
 #from parselmouth.praat import call
-from IPython.display import Audio
-import pygame
-import ipywidgets
-import glob
-from playsound import playsound
+#from IPython.display import Audio
+#import pygame
+#import ipywidgets
+#import glob
+#from playsound import playsound
+#from pydub.effects import speedup
+#from pydub.playback import play
+#from scipy.fftpack import fft
 
 import sounddevice as sd
 from tkinter import *
@@ -15,21 +18,13 @@ import soundfile as sf
 import threading
 from tkinter import messagebox
 
-#import numpy as np
 from PIL import Image, ImageTk
-#import pyrubberband as pyrb
-
 import matplotlib.pyplot as plt
 
 import time
-
 from pydub import AudioSegment
-from pydub.effects import speedup
-
-from pydub.playback import play
 
 import scipy
-from scipy.fftpack import fft
 from scipy.io import wavfile
 
 import numpy as np #pip3 install numpy==1.19.5
@@ -39,7 +34,6 @@ import librosa_logic
 
 class Recorder:
     def __init__(self):
-
      
         self.octaves = 0.0
         self.q = queue.Queue()    
@@ -85,8 +79,6 @@ class Recorder:
         
         self.rec_img = ImageTk.PhotoImage(Image.open("record_b.png"))
         self.idle_img = ImageTk.PhotoImage(Image.open("idle_b.png"))
-        
-
        
         # Position buttons
         record_btn.grid(row=1, column=1)
@@ -100,6 +92,11 @@ class Recorder:
 
     def close(self):
         print('close')
+
+        os.remove('original.wav')
+        os.remove('hipitch_sound.wav')
+        os.remove('slow_hipitch_sound.wav')
+
         self.voice_rec.destroy()
         self.voice_rec.quit()
         exit(1)
@@ -130,25 +127,21 @@ class Recorder:
         hipitch_sound.export("hipitch_sound.wav", format="wav")
         original, fs = librosa_logic.yakr_load("hipitch_sound.wav")
         
-        
-        slow_recording = librosa_logic.yakir_time_stretch(original, 0.5)  
-        scipy.io.wavfile.write("yakir_tmp_333.wav", fs, slow_recording) 
-        subprocess.run(["aplay", "yakir_tmp_333.wav"])
+        if (self.octaves > 0):
+            slow_recording = librosa_logic.time_stretch(original, 0.5)  
+            scipy.io.wavfile.write("slow_hipitch_sound.wav", fs, slow_recording) 
+            subprocess.run(["aplay", "slow_hipitch_sound.wav"])
+        else:
+            subprocess.run(["aplay", "hipitch_sound.wav"])
 
 
-
-        
-        
-
-  
     # Functions to play, stop and record audio in Python voice recorder
     # The recording is done as a thread to prevent it being the main process
 
     def threading_rec(self, command_index):
         if command_index == 1:
 
-            self.label_img.configure(image = self.rec_img)
-            
+            self.label_img.configure(image = self.rec_img)           
 
             # If recording is selected, then the thread is activated
             t1 = threading.Thread(target=self.record_audio)
@@ -210,10 +203,9 @@ class Recorder:
         y_freq = fft(audio)
         domain = len(y_freq) // 2
         x_freq = np.linspace(0, sample_rate//2, N//2)
-        # Changed from abs(y_freq[:domain]) -> y_freq[:domain]
+        
         plt.plot(x_freq, y_freq[:domain])
-        #plt.xlabel("Frequency [Hz]")
-        #plt.ylabel("Frequency Amplitude |X(t)|")
+       
 
         plt.savefig('plt.png')
         time.sleep(1)
@@ -223,42 +215,7 @@ class Recorder:
 def main():
    
 
-    recorder = Recorder()
-    
-def float2pcm(sig, dtype='int16'):
-    """Convert floating point signal with a range from -1 to 1 to PCM.
-    Any signal values outside the interval [-1.0, 1.0) are clipped.
-    No dithering is used.
-    Note that there are different possibilities for scaling floating
-    point numbers to PCM numbers, this function implements just one of
-    them.  For an overview of alternatives see
-    http://blog.bjornroche.com/2009/12/int-float-int-its-jungle-out-there.html
-    Parameters
-    ----------
-    sig : array_like
-        Input array, must have floating point type.
-    dtype : data type, optional
-        Desired (integer) data type.
-    Returns
-    -------
-    numpy.ndarray
-        Integer data, scaled and clipped to the range of the given
-        *dtype*.
-    See Also
-    --------
-    pcm2float, dtype
-    """
-    sig = np.asarray(sig)
-    if sig.dtype.kind != 'f':
-        raise TypeError("'sig' must be a float array")
-    dtype = np.dtype(dtype)
-    if dtype.kind not in 'iu':
-        raise TypeError("'dtype' must be an integer type")
-
-    i = np.iinfo(dtype)
-    abs_max = 2 ** (i.bits - 1)
-    offset = i.min + abs_max
-    return (sig * abs_max + offset).clip(i.min, i.max).astype(dtype)
+    recorder = Recorder() 
 
 if __name__ == '__main__':
     main()

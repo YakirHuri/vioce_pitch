@@ -1,7 +1,3 @@
-
-
-########################################################################
-
 from typing import Union
 import audioread
 import os
@@ -19,8 +15,6 @@ import scipy.io.wavfile
 
 
 from numpy.lib.stride_tricks import as_strided
-# import librosa
-
 
 # Constrain STFT block sizes to 256 KB
 MAX_MEM_BLOCK = 2 ** 8 * 2 ** 10
@@ -119,7 +113,7 @@ def phase_vocoder(D, *, rate, hop_length=None, n_fft=None):
     return d_stretch
 
 
-def yakir_audioread_load(path, offset, duration, dtype):
+def audioread_load(path, offset, duration, dtype):
     """Load an audio buffer using audioread.
 
     This loads one block at a time, and then concatenates the results.
@@ -181,7 +175,7 @@ def yakir_audioread_load(path, offset, duration, dtype):
 
     return y, sr_native
 
-def yakir_soundfile_load(path, offset, duration, dtype):
+def soundfile_load(path, offset, duration, dtype):
     """Load an audio buffer using soundfile."""
     if isinstance(path, sf.SoundFile):
         # If the user passed an existing soundfile object,
@@ -391,11 +385,11 @@ def yakr_load(path) -> Tuple[np.ndarray, float]:
     if isinstance(path, tuple(audioread.available_backends())):
         print('1111111111111111111111111')
         # Force the audioread loader if we have a reader object already
-        y, sr_native = yakir_audioread_load(path, offset, duration, dtype)
+        y, sr_native = audioread_load(path, offset, duration, dtype)
     else:
         print('2222222222222222222222')
         # Otherwise try soundfile first, and then fall back if necessary
-        y, sr_native = yakir_soundfile_load(path, offset, duration, dtype)
+        y, sr_native = soundfile_load(path, offset, duration, dtype)
         print(type(y))
 
     # Final cleanup for dtype and contiguity
@@ -699,7 +693,7 @@ def get_window(window, Nx, *, fftbins=True):
         raise ParameterError("Invalid window specification: {}".format(window))
 
 
-def yakir_stft(
+def stft(
     y,
     *,
     n_fft=2048,
@@ -778,10 +772,10 @@ def yakir_stft(
         )
     return stft_matrix
 
-def yakir_time_stretch(y: np.ndarray,rate: float, **kwargs: Any) -> np.ndarray:
+def time_stretch(y: np.ndarray,rate: float, **kwargs: Any) -> np.ndarray:
       
     # Construct the short-term Fourier transform (STFT)
-    stft = yakir_stft(y, **kwargs)
+    stft = stft(y, **kwargs)
 
     # # Stretch by phase vocoding
     stft_stretch = phase_vocoder(
@@ -798,12 +792,3 @@ def yakir_time_stretch(y: np.ndarray,rate: float, **kwargs: Any) -> np.ndarray:
     y_stretch = istft(stft_stretch, dtype=y.dtype, length=len_stretch, **kwargs)
 
     return y_stretch
-
-if __name__ == '__main__':
-   
-  song, fs = yakr_load("hipitch_sound.wav")
-#   song_2_times_faster = librosa.effects.time_stretch(song, 0.5)  
-
-  song_2_times_faster = yakir_time_stretch(song, 0.5)  
-  scipy.io.wavfile.write("yakir_tmp_222.wav", fs, song_2_times_faster) # save the song
-
