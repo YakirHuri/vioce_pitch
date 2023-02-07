@@ -9,7 +9,6 @@
 #from playsound import playsound
 #from pydub.effects import speedup
 #from pydub.playback import play
-#from scipy.fftpack import fft
 
 import sounddevice as sd
 from tkinter import *
@@ -26,9 +25,12 @@ from pydub import AudioSegment
 
 import scipy
 from scipy.io import wavfile
+from scipy.fftpack import fft
 
 import numpy as np #pip3 install numpy==1.19.5
 import subprocess
+
+import os
 
 import librosa_logic
 
@@ -96,6 +98,9 @@ class Recorder:
         os.remove('original.wav')
         os.remove('hipitch_sound.wav')
         os.remove('slow_hipitch_sound.wav')
+        os.remove('plt.png')
+        
+        
 
         self.voice_rec.destroy()
         self.voice_rec.quit()
@@ -110,7 +115,6 @@ class Recorder:
         sound = AudioSegment.from_file(voice_file, format="wav")
 
         # shift the pitch up by half an octave (speed will increase proportionally)
-        print('self.octave ' +str(self.octaves))
         new_sample_rate = int(sound.frame_rate * (2.0 ** self.octaves))
 
         # keep the same samples but tell the computer they ought to be played at the 
@@ -180,7 +184,6 @@ class Recorder:
 
     # Recording function
     def record_audio(self):
-        print('record voice ...')
         # Declare global variables
         global recording
         # Set to True to record

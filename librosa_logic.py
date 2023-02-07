@@ -693,7 +693,7 @@ def get_window(window, Nx, *, fftbins=True):
         raise ParameterError("Invalid window specification: {}".format(window))
 
 
-def stft(
+def stft_logic(
     y,
     *,
     n_fft=2048,
@@ -775,7 +775,7 @@ def stft(
 def time_stretch(y: np.ndarray,rate: float, **kwargs: Any) -> np.ndarray:
       
     # Construct the short-term Fourier transform (STFT)
-    stft = stft(y, **kwargs)
+    stft = stft_logic(y, **kwargs)
 
     # # Stretch by phase vocoding
     stft_stretch = phase_vocoder(
