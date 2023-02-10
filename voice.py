@@ -1,15 +1,4 @@
 
-
-#import parselmouth
-#from parselmouth.praat import call
-#from IPython.display import Audio
-#import pygame
-#import ipywidgets
-#import glob
-#from playsound import playsound
-#from pydub.effects import speedup
-#from pydub.playback import play
-
 import sounddevice as sd
 from tkinter import *
 import queue
@@ -39,6 +28,8 @@ class Recorder:
      
         self.octaves = 0.0
         self.q = queue.Queue()    
+        
+        self.project_path = '/home/yoni/voice_final/voice_pitch/'
 
         # Define the user interface for Voice Recorder using Python
         self.voice_rec = Tk()
@@ -64,23 +55,23 @@ class Recorder:
         octave_label_s.grid(row=40, column=1, pady=4, padx=4)
 
         # Button to record audio
-        im_re = Image.open('record.jpg')
+        im_re = Image.open(self.project_path+'record.jpg')
         ph_re= ImageTk.PhotoImage(im_re)
         record_btn = Button(self.voice_rec, text="RECORD", image=ph_re, 
                             command=lambda m=1: self.threading_rec(m))
         # Stop button
-        im_st = Image.open('stop.jpg')
+        im_st = Image.open(self.project_path+'stop.jpg')
         ph_st= ImageTk.PhotoImage(im_st)
         stop_btn = Button(self.voice_rec, text="STOP RECORDING", image=ph_st, 
                         command=lambda m=2: self.threading_rec(m))
         # Play button
-        im_pl = Image.open('play.jpg')
+        im_pl = Image.open(self.project_path+'play.jpg')
         ph_pl= ImageTk.PhotoImage(im_pl)    
         play_btn = Button(self.voice_rec, text="PLAY RECORDING", image=ph_pl, 
                         command=lambda m=3: self.threading_rec(m))
         
-        self.rec_img = ImageTk.PhotoImage(Image.open("record_b.png"))
-        self.idle_img = ImageTk.PhotoImage(Image.open("idle_b.png"))
+        self.rec_img = ImageTk.PhotoImage(Image.open(self.project_path+"record_b.png"))
+        self.idle_img = ImageTk.PhotoImage(Image.open(self.project_path+"idle_b.png"))
        
         # Position buttons
         record_btn.grid(row=1, column=1)
@@ -95,10 +86,10 @@ class Recorder:
     def close(self):
         print('close')
 
-        os.remove('original.wav')
-        os.remove('hipitch_sound.wav')
-        os.remove('slow_hipitch_sound.wav')
-        os.remove('plt.png')
+        os.remove(self.project_path+'original.wav')
+        os.remove(self.project_path+'hipitch_sound.wav')
+        os.remove(self.project_path+'slow_hipitch_sound.wav')
+        os.remove(self.project_path+'plt.png')
         
         
 
@@ -111,7 +102,7 @@ class Recorder:
 
    
     def change_octave_and_play(self):
-        voice_file = 'original.wav'
+        voice_file = self.project_path+'original.wav'
         sound = AudioSegment.from_file(voice_file, format="wav")
 
         # shift the pitch up by half an octave (speed will increase proportionally)
@@ -124,21 +115,21 @@ class Recorder:
         # now we just convert it to a common sample rate (44.1k - standard audio CD) to 
         # make sure it works in regular audio players. Other than potentially losing audio quality (if
         # you set it too low - 44.1k is plenty) this should now noticeable change how the audio sounds.
-        hipitch_sound = hipitch_sound.set_frame_rate(int(44100))
-        #Play pitch changed sound
-
-        
-        hipitch_sound.export("hipitch_sound.wav", format="wav")
-        original, fs = librosa_logic.yakr_load("hipitch_sound.wav")
+        hipitch_sound = hipitch_sound.set_frame_rate(int(44100))        
+        hipitch_sound.export(self.project_path+"hipitch_sound.wav", format="wav")
+        original, fs = librosa_logic.yakr_load(self.project_path+"hipitch_sound.wav")
         
         if (self.octaves > 0):
             slow_recording = librosa_logic.time_stretch(original, 0.5)  
-            scipy.io.wavfile.write("slow_hipitch_sound.wav", fs, slow_recording) 
-            subprocess.run(["aplay", "slow_hipitch_sound.wav"])
+            scipy.io.wavfile.write(self.project_path+"slow_hipitch_sound.wav", fs, slow_recording) 
+            subprocess.run(["aplay", self.project_path+"slow_hipitch_sound.wav"])
+        elif (self.octaves < 0):
+            slow_recording = librosa_logic.time_stretch(original, 1.3)  
+            scipy.io.wavfile.write(self.project_path+"slow_hipitch_sound.wav", fs, slow_recording) 
+            subprocess.run(["aplay", self.project_path+"slow_hipitch_sound.wav"])    
         else:
-            subprocess.run(["aplay", "hipitch_sound.wav"])
-
-
+            subprocess.run(["aplay", self.project_path+"hipitch_sound.wav"])
+            
     # Functions to play, stop and record audio in Python voice recorder
     # The recording is done as a thread to prevent it being the main process
 
@@ -166,7 +157,7 @@ class Recorder:
 
                 print('play the recording')
 
-                sample_rate, original_voice = wavfile.read('original.wav')
+                sample_rate, original_voice = wavfile.read(self.project_path+'original.wav')
 
                 self.fft_plot(original_voice, sample_rate)                 
                 self.label_img.configure(image = self.plt_img)
@@ -191,7 +182,7 @@ class Recorder:
         global file_exists
         # Create a file to save the audio
         messagebox.showinfo(message="Recording Audio. Speak into the mic")
-        with sf.SoundFile("original.wav", mode='w', samplerate=44100,
+        with sf.SoundFile(self.project_path+"original.wav", mode='w', samplerate=44100,
                             channels=2) as file:
             # Create an input stream to record audio without a preset time
             with sd.InputStream(samplerate=44100, channels=2, callback=self.callback):
@@ -210,9 +201,9 @@ class Recorder:
         plt.plot(x_freq, y_freq[:domain])
        
 
-        plt.savefig('plt.png')
+        plt.savefig(self.project_path+'plt.png')
         time.sleep(1)
-        self.plt_img = ImageTk.PhotoImage(Image.open("plt.png"))
+        self.plt_img = ImageTk.PhotoImage(Image.open(self.project_path+"plt.png"))
 
   
 def main():

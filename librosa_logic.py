@@ -242,11 +242,9 @@ def to_mono(y: np.ndarray) -> np.ndarray:
  
     # Validate the buffer.  Stereo is ok here.
     valid_audio(y, mono=False)
-    print(type(y))
 
     if y.ndim > 1:
         y = np.mean(y, axis=tuple(range(y.ndim - 1)))
-        print((y))
     
     return y
 def fix_length(
@@ -315,7 +313,6 @@ def resample(
 
     ratio = float(target_sr) / float(orig_sr)
     
-    print(type(y))
 
     n_samples = int(np.ceil(y.shape[axis] * ratio))
 
@@ -383,19 +380,15 @@ def yakr_load(path) -> Tuple[np.ndarray, float]:
 
     dtype = np.float32
     if isinstance(path, tuple(audioread.available_backends())):
-        print('1111111111111111111111111')
         # Force the audioread loader if we have a reader object already
         y, sr_native = audioread_load(path, offset, duration, dtype)
     else:
-        print('2222222222222222222222')
         # Otherwise try soundfile first, and then fall back if necessary
         y, sr_native = soundfile_load(path, offset, duration, dtype)
-        print(type(y))
 
     # Final cleanup for dtype and contiguity
     if mono:
         y = to_mono(y)
-        print(type(y))
 
 
     if sr is not None:
